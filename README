@@ -1,0 +1,55 @@
+README - FILE
+Grasp - Graph strategy to predict protein biding sites
+------------------------------------
+Charles Abreu Santana,
+	Universidade Federal de Minas Gerais,
+	Belo Horizonte, Minas Gerais, Brasil.
+
+VERSION 1.0.0  May 2020.
+
+GRaSP is a residue centric method to predict ligand biding site residues. It is
+based on a supervised learning strategy that models the residue environment as a
+graph at the atomic level. The program is written in python and should work on
+most UNIX like environment.
+
+usage
+-----
+The program is run by the python script called "grasp.py". To use GRaSP, simply
+type "python3 grasp.py", using the parameters -p followed by the name of a valid
+PDB file or a directory contaning many PDB valid files, and -o followed by the
+name of a output directory to save the results, as shown below
+
+  python3 grasp.py -p proteinFile -o outputDir
+
+                    or
+
+  python3 grasp.py -p proteinDir -o outputDir
+
+By default, GRaSP uses the exposure information calculated by Biopython library
+to perform the preditcion. You could use the naccess program to achieve more
+accurated results (http://wolf.bms.umist.ac.uk/naccess/). If you want to use it
+just type -n followed by the directory name where naccess is, as shown below.
+
+  python3 grasp.py -p proteinFile -o outputDir -n naccessDir
+
+example output files
+--------------------
+The output is a .csv file containing two columns: the first one (res_name) which
+contains the residue information and the second one (prediction) with the class
+label predicted. The class label is binary. Class equal to 1 represents positive
+(residue biding site) and 0 means negative (not residue biding site). The residue
+infomation is composed by pdb Id, chain, residue name and residue number joined by
+underlines.
+
+res_name,prediction
+1gkc_A_TYR_420,0
+1gkc_A_PRO_421,1
+1gkc_A_MET_422,1
+1gkc_A_TYR_423,1
+1gkc_A_ARG_424,0
+1gkc_A_PHE_425,0
+1gkc_A_THR_426,0
+1gkc_A_GLU_427,0
+1gkc_A_GLY_428,0
+1gkc_A_PRO_429,0
+1gkc_A_PRO_430,0

@@ -2,6 +2,7 @@ import getopt
 import time
 import sys
 import os
+from glob import glob
 from Grasp.exposure import Exposure
 from Grasp.blast import BLAST
 from Grasp.protein import Protein
@@ -45,8 +46,10 @@ def main(argv):
         ####################
         inicio = time.time()
         ####################
-
         this_protein = Protein(pdb)
+        print('--------------------------------------')
+        print('Start prediction to protein' + this_protein.pdb_id)
+        print('--------------------------------------')
         # STEP 1:  Compute asa or exposure
         if naccess_dir:
             print('Computing asa information to ' + this_protein.pdb_id)
@@ -82,7 +85,13 @@ def main(argv):
         ###################
         fim = time.time()
         ###################
+        clear_temp()
         print('Done in {} seconds.'.format(round(fim - inicio, 2)))
+
+def clear_temp():
+    temp_list = glob('temp/*')
+    for file in temp_list:
+        os.remove(file)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
