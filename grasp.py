@@ -1,41 +1,88 @@
-# My modules
-import naccess
-import blast
-import modeling
-import prediction
-#
+import getopt
+import time
 import sys
 import os
-import time
-from glob import glob
+from Grasp.exposure import Exposure
+from Grasp.blast import BLAST
+from Grasp.protein import Protein
+from Grasp.modeling import Properties, Interactions, Layer
+from Grasp.prediction import BalancedPrediction
+import warnings
+from Bio import BiopythonWarning
+warnings.simplefilter('ignore', BiopythonWarning)
 
-def main(pdb_dir, project_name):
-    project_path = 'projects' + os.sep + project_name + os.sep
-    pdb_list = glob(pdb_dir + os.sep + '*.pdb')
-    log_file = open(project_path + 'log.csv', 'w')
-    log_file.write('pdb_id,seq_len,time\n')
-    for pdb_file in pdb_list:
+def main(argv):
+    try:
+        opts, args = getopt.getopt(argv,"hp:o:n:", ['help', 'protein=',
+                                    'output=','naccess='])
+    except getopt.GetoptError:
+        print ('grasp.py -p <protein_data> -o <out_dir>')
+        sys.exit(2)
+
+    protein_file = ''
+    out_dir = ''
+    naccess_dir = False
+    blast_dir = False
+
+    for opt, arg in opts:
+        if opt == '-h':
+            print ('grasp.py -d <dataset_dir> -o <out_dir>')
+            sys.exit()
+        elif opt in ("-p", "--protein"):
+            protein_file = arg
+        elif opt in ("-o", "--output"):
+            out_dir = arg
+        elif opt in ("-n", "--naccess"):
+            naccess_dir = arg
+
+    # Suport both file and directory with pdb files
+    if not os.path.isdir(protein_file):
+        pdb_list = [protein_file]
+    else:
+        pdb_list = glob(protein_file + os.sep + '*.pdb')
+
+    for pdb in pdb_list:
         ####################
         inicio = time.time()
         ####################
-        pdb_id = os.path.basename(pdb_file).split('.')[0]
-        # Compute acesible surface area
-        rsa_file = naccess.run_naccess(pdb_file, project_path + 'rsa_files/')
-        len_seq = blast.get_fasta(pdb_file, project_path + 'fasta_files/')
-        template_list = blast.run_blast(pdb_id, project_path + 'fasta_files/', project_path + 'templates/')
-        if template_list:
-            #template_file = blast.get_blast_result(pdb_id, project_path + 'fasta_files/', project_path + 'templates/')
-            csv_file = modeling.compute_matrix(pdb_file, rsa_file, project_path + 'matrix/')
-            prediction.class_experiment(csv_file, template_list, '../experiments/biolip/data/', project_path + 'predictions/')
+
+        this_protein = Protein(pdb)
+        # STEP 1:  Compute asa or exposure
+        if naccess_dir:
+            print('Computing asa information to ' + this_protein.pdb_id)
+            Exposure().run_naccess(this_protein, naccess_dir)
         else:
-            print(pdb_id + ': Templates not found!')
+            print('Computing exposure information to ' + this_protein.pdb_id)
+            Exposure().compute_hse(this_protein)
+
+        # STEP 2: Get templates using BLAST
+        this_protein.get_fasta('temp/')
+        templates = BLAST('Grasp/data/').run(this_protein)
+        this_protein.set_templates(templates)
+
+        if templates:
+            # STEP 3: Compute properties
+            print('Computing residue properties for ' + this_protein.pdb_id)
+            p = Properties()
+            p.compute_properties(this_protein)
+            # STEP 4: Compute Interactions
+            print('Computing Interactions for ' +  this_protein.pdb_id)
+            i = Interactions()
+            i.compute_interactions(this_protein)
+            # STEP 5: Compute layers
+            print('Computing layers properties for ' +  this_protein.pdb_id)
+            l = Layer()
+            l.compute_layer(this_protein, 2)
+            # STEP 6: Prediction
+            b = BalancedPrediction('Grasp/data/templates/')
+            b.balanced_prediction(this_protein, out_dir)
+        else:
+            print( 'WARNING: Templates not found for ' + this_protein.pdb_id)
+
         ###################
         fim = time.time()
         ###################
-        print('Done!')
-        tempo = round(fim - inicio, 2)
-        log_file.write(pdb_id + ',' + str(len_seq) + ',' + str(tempo) + '\n')
+        print('Done in {} seconds.'.format(round(fim - inicio, 2)))
 
-    log_file.close()
 if __name__ == '__main__':
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1:])
