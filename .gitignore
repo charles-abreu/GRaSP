@@ -1,4 +1,5 @@
 Grasp/__pycache__/
-Grasp/data/templates/
 .ipynb_checkpoints/
 __pycache__/
+grasp-datasets/
+test/

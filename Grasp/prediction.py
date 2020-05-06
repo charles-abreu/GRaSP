@@ -21,7 +21,7 @@ class BalancedPrediction:
         clf = clf.fit(train_data.iloc[:, :-1], train_data.iloc[:,-1].astype('int'))
         return clf
 
-    def set_train_data(self, protein):
+    def set_train_data(self, protein, naccess):
         df_list = []
         for pdb in protein.templates:
             file_name = self.template_path + os.sep + pdb + '.csv.zip'
@@ -32,12 +32,25 @@ class BalancedPrediction:
 
         if df_list:
             self.train_set = pd.concat(df_list, axis = 0)
+
+            if not naccess:
+                # drop rsa columns from templates
+                drop_list = ['acc_rel','acc_side','acc_main','acc_apolar','acc_polar',
+                'N1_acc_rel','N1_acc_side','N1_acc_main','N1_acc_apolar','N1_acc_polar',
+                'N2_acc_rel','N2_acc_side','N2_acc_main','N2_acc_apolar','N2_acc_polar']
+                self.train_set = self.train_set.drop(drop_list, axis=1)
+            else:
+                # drop exposure columns from templates
+                drop_list = ['hseu','hsed','N1_hseu','N1_hsed','N2_hseu','N2_hsed']
+                self.train_set = self.train_set.drop(drop_list, axis=1)
+
             # Removendo residuos enterrados
+            '''
             if 'acc_rel' in self.train_set.columns:
                 buried = self.train_set[self.train_set['acc_rel'] < 0.1]
                 buried_list = buried.index
                 self.train_set = self.train_set.drop(buried_list, axis=0)
-
+            '''
     def split_data(self, train_data):
         # rows with positive class
         pos_data = train_data[train_data['class'] == 1]
@@ -70,9 +83,9 @@ class BalancedPrediction:
             confidence.append(np.sum(binary_matrix[i])/float(binary_matrix[i].shape[0]))#
         return self.predict_prob(confidence, treshold)
 
-    def balanced_prediction(self, protein, out_dir):
+    def balanced_prediction(self, protein, out_dir, naccess):
         # search and store templates matricies
-        self.set_train_data(protein)
+        self.set_train_data(protein, naccess)
         pos_data, neg_data, N_PARTITIONS = self.split_data(self.train_set)
         # shuffle negative index
         permuted_indices = np.random.permutation(len(neg_data))

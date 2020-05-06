@@ -52,6 +52,8 @@ def main(argv):
         print('--------------------------------------')
         # STEP 1:  Compute asa or exposure
         if naccess_dir:
+            if not os.path.exists(naccess_dir):
+                print( 'WARNING: naccess file not found!')
             print('Computing asa information to ' + this_protein.pdb_id)
             Exposure().run_naccess(this_protein, naccess_dir)
         else:
@@ -78,7 +80,10 @@ def main(argv):
             l.compute_layer(this_protein, 2)
             # STEP 6: Prediction
             b = BalancedPrediction('Grasp/data/templates/')
-            b.balanced_prediction(this_protein, out_dir)
+            if naccess_dir:
+                b.balanced_prediction(this_protein, out_dir, True)
+            else:
+                b.balanced_prediction(this_protein, out_dir, False)
         else:
             print( 'WARNING: Templates not found for ' + this_protein.pdb_id)
 
