@@ -1,15 +1,19 @@
-import getopt
-import time
-import sys
-import os
+import os, sys, getopt, time, warnings
 from glob import glob
-from Grasp.exposure import Exposure
-from Grasp.blast import BLAST
-from Grasp.protein import Protein
-from Grasp.modeling import Properties, Interactions, Layer
-from Grasp.prediction import BalancedPrediction
-import warnings
+from app.exposure import Exposure
+from app.blast import BLAST
+from app.protein import Protein
+from app.modeling import Properties, Interactions, Layer
+from app.prediction import BalancedPrediction
 from Bio import BiopythonWarning
+
+basedir = os.path.dirname(__file__)
+config = {
+    'BLAST_DIR' : os.path.join(basedir,'app/data/'),
+    'DATA_DIR' : os.path.join(basedir,'app/data/'),
+    'TEMPLATES_DIR': os.path.join(basedir,'app/data/templates/')
+}
+
 warnings.simplefilter('ignore', BiopythonWarning)
 
 def main(argv):
@@ -23,7 +27,6 @@ def main(argv):
     protein_file = ''
     out_dir = ''
     naccess_dir = False
-    blast_dir = False
 
     for opt, arg in opts:
         if opt == '-h':
@@ -48,7 +51,7 @@ def main(argv):
         ####################
         this_protein = Protein(pdb)
         print('--------------------------------------')
-        print('Start prediction to protein' + this_protein.pdb_id)
+        print('Start prediction to protein ' + this_protein.pdb_id)
         print('--------------------------------------')
         # STEP 1:  Compute asa or exposure
         if naccess_dir:
@@ -61,25 +64,25 @@ def main(argv):
             Exposure().compute_hse(this_protein)
 
         # STEP 2: Get templates using BLAST
-        this_protein.get_fasta('temp/')
-        templates = BLAST('Grasp/data/').run(this_protein)
+        this_protein.get_fasta(out_dir)
+        templates = BLAST(config['BLAST_DIR']).run(this_protein)
         this_protein.set_templates(templates)
 
         if templates:
             # STEP 3: Compute properties
             print('Computing residue properties for ' + this_protein.pdb_id)
-            p = Properties()
+            p = Properties(config['DATA_DIR'])
             p.compute_properties(this_protein)
             # STEP 4: Compute Interactions
             print('Computing Interactions for ' +  this_protein.pdb_id)
-            i = Interactions()
+            i = Interactions(config['DATA_DIR'])
             i.compute_interactions(this_protein)
             # STEP 5: Compute layers
             print('Computing layers properties for ' +  this_protein.pdb_id)
             l = Layer()
             l.compute_layer(this_protein, 2)
             # STEP 6: Prediction
-            b = BalancedPrediction('Grasp/data/templates/')
+            b = BalancedPrediction(config['TEMPLATES_DIR'])
             if naccess_dir:
                 b.balanced_prediction(this_protein, out_dir, True)
             else:
@@ -90,13 +93,7 @@ def main(argv):
         ###################
         fim = time.time()
         ###################
-        clear_temp()
         print('Done in {} seconds.'.format(round(fim - inicio, 2)))
-
-def clear_temp():
-    temp_list = glob('temp/*')
-    for file in temp_list:
-        os.remove(file)
 
 if __name__ == '__main__':
     main(sys.argv[1:])

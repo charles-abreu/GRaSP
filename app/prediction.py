@@ -16,7 +16,7 @@ class BalancedPrediction:
     def get_model(self, train_data):
         #class_weight ='balanced' or 'balanced_subsample' max_features = 10
         clf = ExtraTreesClassifier(n_estimators=100, max_depth=None,
-            min_samples_split=2, bootstrap = True, random_state=0, n_jobs=2)
+            min_samples_split=2, bootstrap = True, random_state=0, n_jobs=1)
         # matrix data (except class), class column
         clf = clf.fit(train_data.iloc[:, :-1], train_data.iloc[:,-1].astype('int'))
         return clf
@@ -24,7 +24,7 @@ class BalancedPrediction:
     def set_train_data(self, protein, naccess):
         df_list = []
         for pdb in protein.templates:
-            file_name = self.template_path + os.sep + pdb + '.csv.zip'
+            file_name = os.path.join(self.template_path, pdb + '.csv.zip')
             if os.path.exists(file_name):
                 df_list.append(pd.read_csv(file_name, index_col = 'res_name'))
 
@@ -52,16 +52,17 @@ class BalancedPrediction:
                 self.train_set = self.train_set.drop(buried_list, axis=0)
             '''
     def split_data(self, train_data):
+        DENOMINATOR = 4
         # rows with positive class
         pos_data = train_data[train_data['class'] == 1]
         # rows with negative class
         neg_data = train_data[train_data['class'] == 0]
         # The number of partitions is set according the positive class length
         proportion = int(len(neg_data)/len(pos_data))
-        if proportion < 4:
+        if proportion < DENOMINATOR:
             n_parts = proportion
         else:
-            n_parts = int((len(neg_data)/len(pos_data))/4)
+            n_parts = int((len(neg_data)/len(pos_data))/DENOMINATOR)
 
         return pos_data, neg_data, n_parts
 
@@ -74,6 +75,7 @@ class BalancedPrediction:
             else:
                 pred_vector.append(1)
         return pred_vector
+
     # voting using calssification matrix
     def voting(self, binary_matrix, treshold):
         binary_matrix = binary_matrix.T

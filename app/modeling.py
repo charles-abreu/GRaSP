@@ -9,10 +9,11 @@ import numpy as np
 from Bio.PDB import is_aa
 import pandas as pd
 import networkx as nx
+import os
 
 class Properties:
-    def __init__(self):
-        self.types = read_atom_types()
+    def __init__(self, data_dir):
+        self.types = read_atom_types(data_dir)
 
     def compute_properties(self, protein):
         # Insert new columns in protein matrix
@@ -51,8 +52,8 @@ class Properties:
                             protein.matrix.loc[residue_name,'POS'] += 1
 
 class Interactions:
-    def __init__(self):
-        self.atom_types = read_atom_types()
+    def __init__(self, data_dir):
+        self.atom_types = read_atom_types(data_dir)
 
     def compute_interactions(self, protein):
         # Insert new columns in protein matrix
@@ -207,9 +208,9 @@ def get_residue_index(residue):
 # Ler arquivos com as propriedades de cada atomo para cada residuo
 # Retorna um dicionario com o nome do residuo e suas propriedades
 ###################################################################
-def read_atom_types():
+def read_atom_types(data_dir):
     types = {}
-    with open('Grasp/data/atom_types.csv') as in_file:
+    with open(os.path.join(data_dir,"atom_types.csv")) as in_file:
         for line in in_file:
             record = line.strip().split(',')
             atomName = record[0] + '_' + record[1]

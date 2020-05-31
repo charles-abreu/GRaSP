@@ -8,9 +8,7 @@ import os
 import numpy as np
 import pandas as pd
 from Bio import SeqIO
-from Bio.PDB import PDBParser
-from Bio.PDB import is_aa
-from Bio.PDB import NeighborSearch
+from Bio.PDB import PDBParser, is_aa, NeighborSearch
 
 class Protein:
     def __init__(self, file_name):
@@ -20,6 +18,7 @@ class Protein:
         self.parser = PDBParser(QUIET=True)
         self.structure = self.parser.get_structure(self.pdb_id, self.file_name)
         self.init_matrix()
+        # Nwighborhood radios = 6A
         self.neighborhood = Neighborhood().run(self, 6)
 
     ##########################################################
@@ -41,18 +40,17 @@ class Protein:
         self.templates = templates
 
     def init_matrix(self):
-        # Properties
-        #properties = ['DON','HPB','ACP','NEG','ARM','POS']
-        #list all residues
+        # List all residues
         residue_list = list(self.structure[0].get_residues())
-        self.matrix = pd.DataFrame()#columns=properties
-        self.matrix.index.name = 'res_name'
-
+        residue_names = []
         for residue in residue_list:
             if is_aa(residue):
                 # Residue id: pdbID_chain_resName_resNumber
                 residue_name = get_residue_index(residue)
-                self.matrix.loc[residue_name,:] = 0.0
+                residue_names.append(residue_name)
+        # Create empty matrix
+        self.matrix = pd.DataFrame(index=residue_names)
+        self.matrix.index.name = 'res_name'
 
 class Neighborhood:
     def run(self, protein, distance):
@@ -101,7 +99,4 @@ def get_residue_index(residue):
 
 if __name__ == '__main__':
     p = Protein('test/test.pdb')
-    col = ['acc_rel', 'acc_side', 'acc_main', 'acc_apolar', 'acc_polar']
-    for c in col:
-        p.matrix[c] = np.nan
     print(p.matrix)

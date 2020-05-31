@@ -31,13 +31,13 @@ class BLAST:
                 # BLAST parametres
                 #blast_dir = './blast/ncbi-blast-2.9.0+/bin/'
                 blast_type = 'blastp'
-                db = ' -db Grasp/data/biolip_blast/biolip_organic.fasta'
+                db = ' -db ' + os.path.join(self.blast_dir,'biolip_blast/biolip_organic.fasta')
                 ev = ' -evalue ' + str(e_value)
                 q = ' -query ' + fasta
                 outfmt = ' -outfmt "6 delim=,"'
                 result = ' -out ' + out_file
                 # Run blast
-                os.system( './' + self.blast_dir + blast_type + db + ev + q + outfmt + result)
+                os.system( './' + self.blast_dir + os.sep + blast_type + db + ev + q + outfmt + result)
 
             num_templates = len(BlastResult(out_file))
         return self.get_templates(query)
