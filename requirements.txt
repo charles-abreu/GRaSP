@@ -1,6 +1,6 @@
 biopython==1.76
 decorator==4.4.2
-joblib==0.14.1
+joblib==1.2.0
 networkx==2.4
 numpy==1.18.3
 pandas==1.0.3
